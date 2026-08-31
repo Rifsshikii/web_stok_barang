@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"web_stok_barang/config"
 	"web_stok_barang/controllers"
+	"web_stok_barang/middlewares"
 )
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {
@@ -28,7 +29,7 @@ func main() {
 	http.HandleFunc("/api/register", enableCORS(controllers.Register))
 	http.HandleFunc("/api/login", enableCORS(controllers.Login))
 
-	http.HandleFunc("/api/barang", enableCORS(func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/api/barang", enableCORS(middlewares.AuthMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			controllers.GetBarang(w, r)
 		} else if r.Method == "POST" {
@@ -40,7 +41,7 @@ func main() {
 		} else {
 			http.Error(w, "Method tidak diizinkan", http.StatusMethodNotAllowed)
 		}
-	}))
+	})))
 
 	fmt.Println("Server berjalan di http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

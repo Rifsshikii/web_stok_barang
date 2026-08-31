@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtKey = []byte("secret_key_stok_barang")
+var jwtSecret = []byte("rifsshikii1811")
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	var admin models.Admin
@@ -72,7 +72,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString(jwtKey)
+	tokenString, _ := token.SignedString(jwtSecret)
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Login berhasil!",
