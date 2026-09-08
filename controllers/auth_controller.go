@@ -14,37 +14,38 @@ import (
 var jwtSecret = []byte("rifsshikii1811")
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	var admin models.Admin
-	err := json.NewDecoder(r.Body).Decode(&admin)
+	var user models.User // Menggunakan model User (atau Struct lokal)
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Format data tidak valid", http.StatusBadRequest)
 		return
 	}
 
-	if admin.Role == "" {
-		admin.Role = "admin"
+	if user.Role == "" {
+		user.Role = "petugas"
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(admin.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Gagal memproses password", http.StatusInternalServerError)
 		return
 	}
 
-	query := "INSERT INTO admin (nama, nomor_hp, username, password, role) VALUES (?, ?, ?, ?, ?)"
-	_, err = config.DB.Exec(query, admin.Nama, admin.NomorHP, admin.Username, hashedPassword, admin.Role)
+	// PERBAIKAN: Masukkan ke tabel users
+	query := "INSERT INTO users (username, password, role) VALUES (?, ?, ?)"
+	_, err = config.DB.Exec(query, user.Username, hashedPassword, user.Role)
 	if err != nil {
-		http.Error(w, "Gagal mendaftarkan admin: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Gagal mendaftarkan user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Register admin berhasil!"})
+	json.NewEncoder(w).Encode(map[string]string{"message": "Register user berhasil!"})
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
-	var input models.Admin
-	var admin models.Admin
+	var input models.User
+	var user models.User
 
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
@@ -52,23 +53,24 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "SELECT id_admin, nama, username, password, role FROM admin WHERE username = ?"
-	err = config.DB.QueryRow(query, input.Username).Scan(&admin.IDAdmin, &admin.Nama, &admin.Username, &admin.Password, &admin.Role)
+	// PERBAIKAN: Ambil data dari tabel users
+	query := "SELECT id, username, password, role FROM users WHERE username = ?"
+	err = config.DB.QueryRow(query, input.Username).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	if err != nil {
 		http.Error(w, "Username tidak ditemukan", http.StatusUnauthorized)
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(input.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if err != nil {
 		http.Error(w, "Password salah", http.StatusUnauthorized)
 		return
 	}
 
 	claims := jwt.MapClaims{
-		"id_admin": admin.IDAdmin,
-		"nama":     admin.Nama,
-		"role":     admin.Role,
+		"id":       user.ID,
+		"username": user.Username,
+		"role":     user.Role,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -77,11 +79,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Login berhasil!",
 		"token":   tokenString,
-		"admin": map[string]interface{}{
-			"id_admin": admin.IDAdmin,
-			"nama":     admin.Nama,
-			"username": admin.Username,
-			"role":     admin.Role,
+		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"role":     user.Role,
 		},
 	})
 }
