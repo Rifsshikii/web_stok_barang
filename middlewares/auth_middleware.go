@@ -8,7 +8,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("rifsshikii1811")
+// Gunakan Huruf Kapital (JWTSecret) agar bisa diimpor dan dipakai oleh auth_controller.go
+var JWTSecret = []byte("rifsshikii1811")
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +21,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
+			return JWTSecret, nil
 		})
 
 		if err != nil || !token.Valid {
@@ -34,8 +35,10 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Simpan role ke context agar bisa dibaca PolicyMiddleware
+		// Simpan role & id ke context agar bisa dibaca PolicyMiddleware atau Controller
 		ctx := context.WithValue(r.Context(), "role", claims["role"])
+		ctx = context.WithValue(ctx, "id", claims["id"])
+
 		next(w, r.WithContext(ctx))
 	}
 }

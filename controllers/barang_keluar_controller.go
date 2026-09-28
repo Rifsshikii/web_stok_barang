@@ -46,7 +46,8 @@ func GetBarangKeluar(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN barang b ON bk.id_barang = b.id_barang
 		ORDER BY bk.tanggal DESC, bk.id DESC
 	`
-	rows, err := config.DB.Query(query)
+	// PERBAIKAN: Menggunakan config.DBRAW
+	rows, err := config.DBRAW.Query(query)
 	if err != nil {
 		http.Error(w, "Gagal mengambil data barang keluar: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -93,7 +94,8 @@ func CreateBarangKeluar(w http.ResponseWriter, r *http.Request) {
 
 	// Cek persediaan stok saat ini terlebih dahulu
 	var stokSaatIni int
-	err := config.DB.QueryRow("SELECT stok FROM barang WHERE id_barang = ?", input.IDBarang).Scan(&stokSaatIni)
+	// PERBAIKAN: Menggunakan config.DBRAW
+	err := config.DBRAW.QueryRow("SELECT stok FROM barang WHERE id_barang = ?", input.IDBarang).Scan(&stokSaatIni)
 	if err == sql.ErrNoRows {
 		http.Error(w, "Barang tidak ditemukan di database", http.StatusNotFound)
 		return
@@ -110,7 +112,8 @@ func CreateBarangKeluar(w http.ResponseWriter, r *http.Request) {
 
 	// Insert transaksi ke tabel barang_keluar
 	queryInsert := "INSERT INTO barang_keluar (id_barang, jumlah, tanggal, keterangan) VALUES (?, ?, ?, ?)"
-	_, err = config.DB.Exec(queryInsert, input.IDBarang, input.Jumlah, input.Tanggal, input.Keterangan)
+	// PERBAIKAN: Menggunakan config.DBRAW
+	_, err = config.DBRAW.Exec(queryInsert, input.IDBarang, input.Jumlah, input.Tanggal, input.Keterangan)
 	if err != nil {
 		http.Error(w, "Gagal mencatat barang keluar: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -118,7 +121,8 @@ func CreateBarangKeluar(w http.ResponseWriter, r *http.Request) {
 
 	// Update (kurangi) stok di tabel barang
 	queryUpdateStok := "UPDATE barang SET stok = stok - ? WHERE id_barang = ?"
-	_, err = config.DB.Exec(queryUpdateStok, input.Jumlah, input.IDBarang)
+	// PERBAIKAN: Menggunakan config.DBRAW
+	_, err = config.DBRAW.Exec(queryUpdateStok, input.Jumlah, input.IDBarang)
 	if err != nil {
 		http.Error(w, "Gagal memperbarui stok barang: "+err.Error(), http.StatusInternalServerError)
 		return

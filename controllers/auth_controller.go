@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
 	"web_stok_barang/config"
 	"web_stok_barang/models"
 
@@ -31,9 +32,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PERBAIKAN: Masukkan ke tabel users
+	// PERBAIKAN: Menggunakan config.DBRAW (bukan DBRAWRAWRAW)
 	query := "INSERT INTO users (username, password, role) VALUES (?, ?, ?)"
-	_, err = config.DB.Exec(query, user.Username, hashedPassword, user.Role)
+	_, err = config.DBRAW.Exec(query, user.Username, hashedPassword, user.Role)
 	if err != nil {
 		http.Error(w, "Gagal mendaftarkan user: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -53,9 +54,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PERBAIKAN: Ambil data dari tabel users
+	// PERBAIKAN: Menggunakan config.DBRAW
 	query := "SELECT id, username, password, role FROM users WHERE username = ?"
-	err = config.DB.QueryRow(query, input.Username).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
+	err = config.DBRAW.QueryRow(query, input.Username).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	if err != nil {
 		http.Error(w, "Username tidak ditemukan", http.StatusUnauthorized)
 		return
@@ -80,6 +81,42 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"message": "Login berhasil!",
 		"token":   tokenString,
 		"user": map[string]interface{}{
+			"id":       user.ID,
+			"username": user.Username,
+			"role":     user.Role,
+		},
+	})
+}
+
+func GetProfile(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	userID, okID := r.Context().Value("user_id").(int)
+	if !okID {
+		// Fallback jika ID tersimpan sebagai float64 saat JWT di-parse
+		if floatID, ok := r.Context().Value("user_id").(float64); ok {
+			userID = int(floatID)
+			okID = true
+		}
+	}
+
+	if !okID {
+		http.Error(w, "Unauthorized: Data profil tidak ditemukan", http.StatusUnauthorized)
+		return
+	}
+
+	var user models.User
+	// PERBAIKAN: Menggunakan config.DBRAW
+	query := "SELECT id, username, role FROM users WHERE id = ?"
+	err := config.DBRAW.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Role)
+	if err != nil {
+		http.Error(w, "User tidak ditemukan", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data": map[string]interface{}{
 			"id":       user.ID,
 			"username": user.Username,
 			"role":     user.Role,

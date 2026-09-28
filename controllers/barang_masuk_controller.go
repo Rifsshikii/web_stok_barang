@@ -41,7 +41,7 @@ func GetBarangMasuk(w http.ResponseWriter, r *http.Request) {
 		LEFT JOIN barang b ON bm.id_barang = b.id_barang
 		ORDER BY bm.tanggal DESC, bm.id DESC
 	`
-	rows, err := config.DB.Query(query)
+	rows, err := config.DBRAW.Query(query)
 	if err != nil {
 		http.Error(w, "Gagal mengambil data barang masuk: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -87,7 +87,7 @@ func CreateBarangMasuk(w http.ResponseWriter, r *http.Request) {
 
 	// 1. Simpan ke tabel barang_masuk
 	queryInsert := "INSERT INTO barang_masuk (id_barang, jumlah, tanggal, keterangan) VALUES (?, ?, ?, ?)"
-	_, err := config.DB.Exec(queryInsert, input.IDBarang, input.Jumlah, input.Tanggal, input.Keterangan)
+	_, err := config.DBRAW.Exec(queryInsert, input.IDBarang, input.Jumlah, input.Tanggal, input.Keterangan)
 	if err != nil {
 		http.Error(w, "Gagal mencatat barang masuk: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -95,7 +95,7 @@ func CreateBarangMasuk(w http.ResponseWriter, r *http.Request) {
 
 	// 2. Otomatis Update (tambah) Stok di tabel barang
 	queryUpdateStok := "UPDATE barang SET stok = stok + ? WHERE id_barang = ?"
-	_, err = config.DB.Exec(queryUpdateStok, input.Jumlah, input.IDBarang)
+	_, err = config.DBRAW.Exec(queryUpdateStok, input.Jumlah, input.IDBarang)
 	if err != nil {
 		http.Error(w, "Gagal memperbarui stok barang: "+err.Error(), http.StatusInternalServerError)
 		return

@@ -21,7 +21,7 @@ func GetPengaturan(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT id, nama_aplikasi, COALESCE(alamat, ''), COALESCE(telepon, '') FROM pengaturan LIMIT 1`
 
 	var p PengaturanDTO
-	err := config.DB.QueryRow(query).Scan(&p.ID, &p.NamaAplikasi, &p.Alamat, &p.Telepon)
+	err := config.DBRAW.QueryRow(query).Scan(&p.ID, &p.NamaAplikasi, &p.Alamat, &p.Telepon)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -47,7 +47,7 @@ func UpdatePengaturan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `UPDATE pengaturan SET nama_aplikasi = ?, alamat = ?, telepon = ? WHERE id = ?`
-	_, err = config.DB.Exec(query, p.NamaAplikasi, p.Alamat, p.Telepon, p.ID)
+	_, err = config.DBRAW.Exec(query, p.NamaAplikasi, p.Alamat, p.Telepon, p.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

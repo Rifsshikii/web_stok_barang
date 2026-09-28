@@ -37,7 +37,7 @@ func GetRiwayat(w http.ResponseWriter, r *http.Request) {
 		ORDER BY id DESC
 	`
 
-	rows, err := config.DB.Query(query)
+	rows, err := config.DBRAW.Query(query)
 	if err != nil {
 		http.Error(w, "Error DB: "+err.Error(), http.StatusInternalServerError)
 		return
