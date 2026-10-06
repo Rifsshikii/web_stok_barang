@@ -3,13 +3,21 @@ package middlewares
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// Gunakan Huruf Kapital (JWTSecret) agar bisa diimpor dan dipakai oleh auth_controller.go
-var JWTSecret = []byte("rifsshikii1811")
+// GetJWTSecret mengambil kunci rahasia dari variabel lingkungan (.env)
+// Bisa dipanggil oleh auth_controller.go saat membuat (sign) token
+func GetJWTSecret() []byte {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		secret = "20091118" // Fallback jika .env belum sempat dibaca
+	}
+	return []byte(secret)
+}
 
 func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +29,7 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 
 		tokenString := strings.Replace(authHeader, "Bearer ", "", 1)
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return JWTSecret, nil
+			return GetJWTSecret(), nil
 		})
 
 		if err != nil || !token.Valid {

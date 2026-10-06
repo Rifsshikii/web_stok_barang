@@ -11,8 +11,9 @@ import (
 
 func GetBarang(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	// PERBAIKAN: Menggunakan config.DBRAW
-	rows, err := config.DBRAW.Query("SELECT id_barang, kode_barang, kategori, stok, harga, nomor_resi, status FROM barang")
+	
+	// PERBAIKAN: Menambahkan nama_barang pada SELECT
+	rows, err := config.DBRAW.Query("SELECT id_barang, kode_barang, nama_barang, kategori, stok, harga, nomor_resi, status FROM barang")
 	if err != nil {
 		http.Error(w, "Gagal mengambil data barang: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -22,7 +23,8 @@ func GetBarang(w http.ResponseWriter, r *http.Request) {
 	var listBarang []models.Barang
 	for rows.Next() {
 		var b models.Barang
-		if err := rows.Scan(&b.IDBarang, &b.KodeBarang, &b.Kategori, &b.Stok, &b.Harga, &b.NomorResi, &b.Status); err != nil {
+		// PERBAIKAN: Menambahkan &b.NamaBarang pada Scan
+		if err := rows.Scan(&b.IDBarang, &b.KodeBarang, &b.NamaBarang, &b.Kategori, &b.Stok, &b.Harga, &b.NomorResi, &b.Status); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -41,9 +43,11 @@ func CreateBarang(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "INSERT INTO barang (kode_barang, kategori, stok, harga, nomor_resi, status) VALUES (?, ?, ?, ?, ?, ?)"
-	// PERBAIKAN: Menggunakan config.DBRAW
-	res, err := config.DBRAW.Exec(query, b.KodeBarang, b.Kategori, b.Stok, b.Harga, b.NomorResi, b.Status)
+	// PERBAIKAN: Menambahkan nama_barang pada query INSERT
+	query := "INSERT INTO barang (kode_barang, nama_barang, kategori, stok, harga, nomor_resi, status) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	
+	// PERBAIKAN: Menambahkan b.NamaBarang pada parameter Exec
+	res, err := config.DBRAW.Exec(query, b.KodeBarang, b.NamaBarang, b.Kategori, b.Stok, b.Harga, b.NomorResi, b.Status)
 	if err != nil {
 		http.Error(w, "Gagal menambah barang: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -75,9 +79,11 @@ func UpdateBarang(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "UPDATE barang SET kode_barang=?, kategori=?, stok=?, harga=?, nomor_resi=?, status=? WHERE id_barang=?"
-	// PERBAIKAN: Menggunakan config.DBRAW
-	_, err = config.DBRAW.Exec(query, b.KodeBarang, b.Kategori, b.Stok, b.Harga, b.NomorResi, b.Status, id)
+	// PERBAIKAN: Menambahkan nama_barang=? pada query UPDATE
+	query := "UPDATE barang SET kode_barang=?, nama_barang=?, kategori=?, stok=?, harga=?, nomor_resi=?, status=? WHERE id_barang=?"
+	
+	// PERBAIKAN: Menambahkan b.NamaBarang pada parameter Exec
+	_, err = config.DBRAW.Exec(query, b.KodeBarang, b.NamaBarang, b.Kategori, b.Stok, b.Harga, b.NomorResi, b.Status, id)
 	if err != nil {
 		http.Error(w, "Gagal mengupdate barang: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -101,7 +107,6 @@ func DeleteBarang(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := "DELETE FROM barang WHERE id_barang=?"
-	// PERBAIKAN: Menggunakan config.DBRAW
 	_, err = config.DBRAW.Exec(query, id)
 	if err != nil {
 		http.Error(w, "Gagal menghapus barang: "+err.Error(), http.StatusInternalServerError)

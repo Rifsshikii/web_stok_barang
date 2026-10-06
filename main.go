@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"web_stok_barang/config"
 	"web_stok_barang/controllers"
 	"web_stok_barang/middlewares"
@@ -37,6 +40,12 @@ func handleProtected(handler http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
+	// 1. Muat file .env di paling awal
+	if err := godotenv.Load(); err != nil {
+		log.Println("Peringatan: File .env tidak ditemukan, menggunakan variabel lingkungan bawaan")
+	}
+
+	// 2. Inisialisasi Koneksi Database
 	config.ConnectDB()
 
 	mux := http.NewServeMux()
@@ -152,11 +161,10 @@ func main() {
 		),
 	)))
 
-	// 8b. TAMBAHAN BARU: Handler Update Status Pengiriman berdasarkan ID (/api/pengiriman/id) (Petugas & Admin)
+	// 8b. Handler Update Status Pengiriman berdasarkan ID (/api/pengiriman/id) (Petugas & Admin)
 	mux.HandleFunc("/api/pengiriman/", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
-				// Abaikan jika rute ini sebenarnya memanggil endpoint lain yang kebetulan berawalan sama
 				if strings.HasPrefix(r.URL.Path, "/api/pengaturan") {
 					http.NotFound(w, r)
 					return
@@ -213,9 +221,15 @@ func main() {
 		),
 	)))
 
-	fmt.Println("Server berjalan di http://localhost:8080")
+	// 3. Tentukan Port dari .env atau Default 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	err := http.ListenAndServe(":8080", enableCORS(mux))
+	fmt.Printf("Server berjalan di http://localhost:%s\n", port)
+
+	err := http.ListenAndServe(":"+port, enableCORS(mux))
 	if err != nil {
 		fmt.Println("Server error:", err)
 	}

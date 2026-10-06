@@ -6,16 +6,15 @@ import (
 	"time"
 
 	"web_stok_barang/config"
+	"web_stok_barang/middlewares"
 	"web_stok_barang/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
-var jwtSecret = []byte("rifsshikii1811")
-
 func Register(w http.ResponseWriter, r *http.Request) {
-	var user models.User // Menggunakan model User (atau Struct lokal)
+	var user models.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, "Format data tidak valid", http.StatusBadRequest)
@@ -32,7 +31,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PERBAIKAN: Menggunakan config.DBRAW (bukan DBRAWRAWRAW)
 	query := "INSERT INTO users (username, password, role) VALUES (?, ?, ?)"
 	_, err = config.DBRAW.Exec(query, user.Username, hashedPassword, user.Role)
 	if err != nil {
@@ -54,7 +52,6 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PERBAIKAN: Menggunakan config.DBRAW
 	query := "SELECT id, username, password, role FROM users WHERE username = ?"
 	err = config.DBRAW.QueryRow(query, input.Username).Scan(&user.ID, &user.Username, &user.Password, &user.Role)
 	if err != nil {
@@ -75,7 +72,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, _ := token.SignedString(jwtSecret)
+
+	tokenString, err := token.SignedString(middlewares.GetJWTSecret())
+	if err != nil {
+		http.Error(w, "Gagal membuat token login", http.StatusInternalServerError)
+		return
+	}
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"message": "Login berhasil!",
@@ -91,10 +93,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func GetProfile(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	userID, okID := r.Context().Value("user_id").(int)
+	userID, okID := r.Context().Value("id").(int)
 	if !okID {
-		// Fallback jika ID tersimpan sebagai float64 saat JWT di-parse
-		if floatID, ok := r.Context().Value("user_id").(float64); ok {
+		if floatID, ok := r.Context().Value("id").(float64); ok {
 			userID = int(floatID)
 			okID = true
 		}
@@ -106,7 +107,6 @@ func GetProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var user models.User
-	// PERBAIKAN: Menggunakan config.DBRAW
 	query := "SELECT id, username, role FROM users WHERE id = ?"
 	err := config.DBRAW.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Role)
 	if err != nil {
