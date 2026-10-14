@@ -40,24 +40,19 @@ func handleProtected(handler http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
-	// 1. Muat file .env di paling awal
 	if err := godotenv.Load(); err != nil {
 		log.Println("Peringatan: File .env tidak ditemukan, menggunakan variabel lingkungan bawaan")
 	}
 
-	// 2. Inisialisasi Koneksi Database
 	config.ConnectDB()
 
 	mux := http.NewServeMux()
 
-	// 1. Route Public
 	mux.HandleFunc("/api/register", controllers.Register)
 	mux.HandleFunc("/api/login", controllers.Login)
 
-	// 2. Profile / Check Session (Dapat diakses Admin, Petugas, dan User)
 	mux.HandleFunc("/api/me", handleProtected(middlewares.AuthMiddleware(controllers.GetProfile)))
 
-	// 3. Handler Pengaturan (GET: Admin & Petugas, POST/PUT: Admin)
 	mux.HandleFunc("/api/pengaturan", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +68,6 @@ func main() {
 		),
 	)))
 
-	// 4. Handler Barang Masuk (POST sekarang bisa diakses Petugas juga)
 	mux.HandleFunc("/api/barang-masuk", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +83,6 @@ func main() {
 		),
 	)))
 
-	// 5. Handler Barang Keluar (POST sekarang bisa diakses Petugas juga)
 	mux.HandleFunc("/api/barang-keluar", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -105,7 +98,6 @@ func main() {
 		),
 	)))
 
-	// 6. Handler Riwayat Transaksi (Diakses Admin, Petugas, dan User/Pengguna)
 	mux.HandleFunc("/api/riwayat", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas, policy.RoleUser)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +110,6 @@ func main() {
 		),
 	)))
 
-	// 7. Handler Data User (Khusus Admin)
 	mux.HandleFunc("/api/users", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +122,6 @@ func main() {
 		),
 	)))
 
-	// 7b. Handler Hapus User berdasarkan ID (/api/users/id) (Khusus Admin)
 	mux.HandleFunc("/api/users/", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -145,7 +135,6 @@ func main() {
 		),
 	)))
 
-	// 8. Handler Pengiriman Barang (GET & POST) (Petugas & Admin)
 	mux.HandleFunc("/api/pengiriman", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -161,7 +150,6 @@ func main() {
 		),
 	)))
 
-	// 8b. Handler Update Status Pengiriman berdasarkan ID (/api/pengiriman/id) (Petugas & Admin)
 	mux.HandleFunc("/api/pengiriman/", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -180,7 +168,6 @@ func main() {
 		),
 	)))
 
-	// 9. Handler /api/barang (GET dapat diakses oleh Admin, Petugas, dan User)
 	mux.HandleFunc("/api/barang", handleProtected(middlewares.AuthMiddleware(
 		middlewares.PolicyMiddleware(policy.RoleAdmin, policy.RolePetugas, policy.RoleUser)(
 			func(w http.ResponseWriter, r *http.Request) {
@@ -221,7 +208,6 @@ func main() {
 		),
 	)))
 
-	// 3. Tentukan Port dari .env atau Default 8080
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"

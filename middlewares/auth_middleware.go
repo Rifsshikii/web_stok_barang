@@ -9,12 +9,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// GetJWTSecret mengambil kunci rahasia dari variabel lingkungan (.env)
-// Bisa dipanggil oleh auth_controller.go saat membuat (sign) token
 func GetJWTSecret() []byte {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
-		secret = "20091118" // Fallback jika .env belum sempat dibaca
+		secret = "20091118"
 	}
 	return []byte(secret)
 }
@@ -43,7 +41,6 @@ func AuthMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		// Simpan role & id ke context agar bisa dibaca PolicyMiddleware atau Controller
 		ctx := context.WithValue(r.Context(), "role", claims["role"])
 		ctx = context.WithValue(ctx, "id", claims["id"])
 

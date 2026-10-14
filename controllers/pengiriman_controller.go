@@ -9,7 +9,6 @@ import (
 	"web_stok_barang/models"
 )
 
-// GetPengiriman - Mengambil seluruh data pengiriman untuk Dashboard & Tabel Petugas
 func GetPengiriman(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -37,7 +36,6 @@ func GetPengiriman(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(listPengiriman)
 }
 
-// CreatePengiriman - Menambah data pengiriman baru
 func CreatePengiriman(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -58,7 +56,6 @@ func CreatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// VALIDASI: Cek apakah IDBarang sudah dipilih
 	if input.IDBarang <= 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -67,7 +64,6 @@ func CreatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Default status jika tidak diisi
 	if input.Status == "" {
 		input.Status = "Diproses"
 	}
@@ -88,7 +84,6 @@ func CreatePengiriman(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// UpdatePengiriman - Mengubah status / konfirmasi pengiriman (/api/pengiriman/:id)
 func UpdatePengiriman(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -100,7 +95,6 @@ func UpdatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ambil ID Pengiriman dari URL Path
 	pathParts := strings.Split(r.URL.Path, "/")
 	id := pathParts[len(pathParts)-1]
 
@@ -112,7 +106,6 @@ func UpdatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. Cek dulu apakah data pengiriman ada dan barang sudah dipilih
 	var pengiriman models.Pengiriman
 	if err := config.DB.Where("id_pengiriman = ?", id).First(&pengiriman).Error; err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -122,7 +115,6 @@ func UpdatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Validasi apakah pengiriman tersebut memiliki barang yang valid
 	if pengiriman.IDBarang <= 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{
@@ -143,7 +135,6 @@ func UpdatePengiriman(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. PERBAIKAN: Gunakan kolom "id_pengiriman" bukan "id"
 	if err := config.DB.Model(&models.Pengiriman{}).Where("id_pengiriman = ?", id).Update("status", req.Status).Error; err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{

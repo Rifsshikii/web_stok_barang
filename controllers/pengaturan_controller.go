@@ -14,7 +14,6 @@ type PengaturanDTO struct {
 	Telepon      string `json:"telepon"`
 }
 
-// GET: Ambil data pengaturan
 func GetPengaturan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -30,7 +29,6 @@ func GetPengaturan(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
-// PUT / POST: Update data pengaturan
 func UpdatePengaturan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

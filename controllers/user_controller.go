@@ -13,7 +13,6 @@ type UserResponse struct {
 	Role     string `json:"role"`
 }
 
-// GetUsers - Ambil seluruh data user (Khusus Admin)
 func GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -37,11 +36,9 @@ func GetUsers(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-// DeleteUser - Hapus user berdasarkan ID (/api/users/id)
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// 1. Ambil ID dari URL Path (misal: /api/users/5 -> id = "5")
 	pathParts := strings.Split(r.URL.Path, "/")
 	id := pathParts[len(pathParts)-1]
 
@@ -51,7 +48,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Eksekusi query DELETE ke database MySQL
 	result, err := config.DBRAW.Exec("DELETE FROM users WHERE id = ?", id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -61,7 +57,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Cek apakah ada baris data yang terpengaruh/terhapus
 	rowsAffected, _ := result.RowsAffected()
 	if rowsAffected == 0 {
 		w.WriteHeader(http.StatusNotFound)
@@ -69,7 +64,6 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Berikan respon sukses
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "User berhasil dihapus",

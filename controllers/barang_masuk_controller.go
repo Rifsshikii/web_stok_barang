@@ -7,27 +7,25 @@ import (
 )
 
 type BarangMasukInput struct {
-	IDBarang   int    `json:"id_barang"`
-	Jumlah     int    `json:"jumlah"`
-	Tanggal    string `json:"tanggal"`
+	IDBarang     int    `json:"id_barang"`
+	Jumlah       int    `json:"jumlah"`
+	Tanggal      string `json:"tanggal"`
 	Keterangan string `json:"keterangan"`
 }
 
 type BarangMasukResponse struct {
-	ID         int    `json:"id"`
-	IDBarang   int    `json:"id_barang"`
+	ID           int    `json:"id"`
+	IDBarang     int    `json:"id_barang"`
 	KodeBarang string `json:"kode_barang"`
 	NamaBarang string `json:"nama_barang"`
-	Jumlah     int    `json:"jumlah"`
-	Tanggal    string `json:"tanggal"`
+	Jumlah       int    `json:"jumlah"`
+	Tanggal      string `json:"tanggal"`
 	Keterangan string `json:"keterangan"`
 }
 
-// 1. GET ALL BARANG MASUK
 func GetBarangMasuk(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	// LEFT JOIN + COALESCE untuk cegah scan error pada NULL value
 	query := `
 		SELECT 
 			bm.id, 
@@ -69,7 +67,6 @@ func GetBarangMasuk(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(listData)
 }
 
-// 2. CREATE BARANG MASUK (+ Otomatis Tambah Stok)
 func CreateBarangMasuk(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -79,13 +76,11 @@ func CreateBarangMasuk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validation
 	if input.IDBarang == 0 || input.Jumlah <= 0 {
 		http.Error(w, "Pilih barang dan masukan jumlah yang valid", http.StatusBadRequest)
 		return
 	}
 
-	// 1. Simpan ke tabel barang_masuk
 	queryInsert := "INSERT INTO barang_masuk (id_barang, jumlah, tanggal, keterangan) VALUES (?, ?, ?, ?)"
 	_, err := config.DBRAW.Exec(queryInsert, input.IDBarang, input.Jumlah, input.Tanggal, input.Keterangan)
 	if err != nil {
@@ -93,7 +88,6 @@ func CreateBarangMasuk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Otomatis Update (tambah) Stok di tabel barang
 	queryUpdateStok := "UPDATE barang SET stok = stok + ? WHERE id_barang = ?"
 	_, err = config.DBRAW.Exec(queryUpdateStok, input.Jumlah, input.IDBarang)
 	if err != nil {
